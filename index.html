@@ -534,9 +534,13 @@ function xlErr(m){
 async function doLogout(){ await sb.auth.signOut(); }
 
 async function loginWithGoogle(){
+  // URL di produzione GitHub Pages — aggiorna se cambi repo
+  const redirectTo = window.location.hostname === 'localhost'
+    ? window.location.origin
+    : 'https://teisemo.github.io/GymBroTracker/';
   const {error}=await sb.auth.signInWithOAuth({
     provider:'google',
-    options:{ redirectTo: window.location.href.split('?')[0] }
+    options:{ redirectTo }
   });
   if(error){
     const errEl=document.getElementById('auth-err');
