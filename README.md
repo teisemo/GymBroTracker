@@ -1,94 +1,133 @@
-# 🏋️ GymTracker
+# 💪 GymBroTracker
 
-Webapp di tracking allenamento full-body con Supabase come backend e GitHub Pages come hosting.  
-Supporta più utenti (3+) con storico condiviso e grafici di progressione.
+Webapp di tracking allenamento per gruppi — un unico account, più atleti, storico condiviso e progressi visualizzati per esercizio.
+
+Hostata su **GitHub Pages** (zero server), backend su **Supabase** (PostgreSQL + Auth).
 
 ---
 
-## 🚀 Setup in 5 passi
+## ✨ Funzionalità
+
+- **Home** — mostra il prossimo allenamento in rotazione automatica (A1→A2→A3), riepilogo dell'ultima sessione con i kg usati da ogni atleta, pulsante per saltare all'allenamento successivo
+- **Scheda** — selettore atleta, serie di riscaldamento e allenanti, kg e rip per ogni serie, spunta completamento, suggerimento automatico dai kg della sessione precedente, badge arancione "↑ aumenta peso" se nella sessione precedente hai fatto ≥10 ripetizioni, auto-salvataggio silenzioso
+- **Storico** — tutte le sessioni filtrabili per atleta e allenamento, dettaglio kg per ogni esercizio, confronto tra due sessioni dello stesso allenamento
+- **Progressi** — card per esercizio con kg attuale, delta vs sessione precedente, sparkline degli ultimi 8 allenamenti, storico delle ultime sessioni
+- **Gestione Atleti** — aggiungi/rimuovi atleti (nome e cognome) senza toccare il codice
+- **Gestione Esercizi** — modifica nomi, tempo di esecuzione e range rip; aggiungi o rimuovi esercizi da ogni allenamento liberamente
+
+---
+
+## 🚀 Setup
 
 ### 1. Crea il progetto Supabase
 
 1. Vai su [supabase.com](https://supabase.com) → **New project**
-2. Scegli nome (es. `gym-tracker`), password DB, regione (EU West)
-3. Aspetta ~2 minuti che il progetto si avvii
+2. Scegli nome (es. `gymbrotracker`), password DB, regione EU West
+3. Aspetta ~2 minuti che il progetto sia pronto
 
-### 2. Crea le tabelle
+### 2. Esegui lo schema SQL
 
-1. Nel pannello Supabase → **SQL Editor** → **New query**
-2. Incolla tutto il contenuto di `supabase_schema.sql`
-3. Clicca **Run** — deve comparire "Success"
+Nel pannello Supabase → **SQL Editor** → **New query**, esegui nell'ordine:
 
-### 3. Configura le credenziali
+| File | Quando eseguirlo |
+|------|-----------------|
+| `schema_v4.sql` | Prima installazione — crea tutte le tabelle |
+| `schema_v5.sql` | Aggiunge la tabella `athletes` e `athlete_id` |
+| `fix_constraint.sql` | Corregge il vincolo unique su `workout_sessions` |
+| `fix_exercises_constraint.sql` | Rimuove il vincolo unique su `exercises.position` |
 
-1. Supabase → **Project Settings** → **API**
-2. Copia **Project URL** e **anon public** key
-3. Apri `js/config.js` e sostituisci:
+> Se parti da zero, esegui tutti e 4 in sequenza.
+
+### 3. Inserisci le credenziali
+
+Nel file `index.html`, cerca in cima allo `<script>` e sostituisci:
 
 ```js
-const SUPABASE_URL = 'https://TUOPROJECT.supabase.co';   // ← il tuo URL
-const SUPABASE_ANON_KEY = 'eyJ...';                       // ← la tua anon key
+const SUPABASE_URL      = 'https://TUOPROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJ...';
 ```
+
+Le trovi su: **Supabase → Project Settings → API → Project URL** e **anon public key**.
 
 ### 4. Pubblica su GitHub Pages
 
 ```bash
-# Se non hai ancora un repo
 git init
 git add .
 git commit -m "first commit"
 git branch -M main
-git remote add origin https://github.com/TUO-USER/gym-tracker.git
+git remote add origin https://github.com/TUO-USER/gymbrotracker.git
 git push -u origin main
 ```
 
-Poi su GitHub → repo → **Settings** → **Pages** → Source: `main / (root)` → **Save**
+Poi: **GitHub → repo → Settings → Pages → Source: main / (root) → Save**
 
-L'app sarà disponibile su `https://TUO-USER.github.io/gym-tracker/`
+L'app sarà disponibile su `https://TUO-USER.github.io/gymbrotracker/`
 
-### 5. Registra i 3 utenti
+### 5. Prima configurazione
 
-Apri la webapp → **Registrati** → inserisci email, password e nome.  
-Ripeti per ciascuno dei 3 utenti.
+1. Apri l'app e registra l'account (serve un solo account per tutto il gruppo)
+2. Vai su **Impostazioni → Atleti** → aggiungi i nomi di tutti gli atleti del gruppo
+3. Vai su **Impostazioni → Esercizi** → verifica o modifica la scheda di allenamento
+4. Inizia ad allenarti!
 
 ---
 
-## 📁 Struttura progetto
+## 📁 Struttura del progetto
 
 ```
-gym-tracker/
-├── index.html              # App principale
-├── css/
-│   └── style.css           # Stili
-├── js/
-│   ├── config.js           # ← Credenziali Supabase + dati allenamento
-│   ├── data.js             # Layer dati (tutte le query Supabase)
-│   └── app.js              # Logica UI
-└── supabase_schema.sql     # Schema DB da eseguire una volta
+gymbrotracker/
+├── index.html                      ← Tutta l'app (HTML + CSS + JS inline)
+├── schema_v4.sql                   ← Schema base (tabelle exercises, workout_sessions, profiles)
+├── schema_v5.sql                   ← Aggiunta tabella athletes
+├── fix_constraint.sql              ← Fix vincolo unique su workout_sessions
+├── fix_exercises_constraint.sql    ← Fix vincolo unique su exercises.position
+└── README.md
 ```
 
-## ✏️ Personalizzare gli esercizi
+> L'intera app è un singolo file `index.html` — niente build tool, niente Node.js, niente dipendenze da installare. Funziona direttamente su GitHub Pages.
 
-Modifica `js/config.js` → array `ALLENAMENTI`. Ogni oggetto:
+---
+
+## 🗄️ Schema del database
+
+| Tabella | Descrizione |
+|---------|-------------|
+| `profiles` | Account di login (email, display name) |
+| `athletes` | Atleti del gruppo (nome, cognome, ordine) |
+| `exercises` | Esercizi delle 3 schede (nome, tempo, range rip) — condivisi |
+| `workout_sessions` | Una riga per (utente, atleta, data, allenamento) con tutti i dati kg/rip in JSONB |
+
+### Logica delle sessioni
+
+- Ogni sessione è legata a un `athlete_id` specifico — più atleti possono allenarsi lo stesso giorno
+- L'allenamento del giorno è calcolato automaticamente in rotazione A1→A2→A3 basandosi sull'ultima sessione salvata
+- I suggerimenti kg mostrano i valori dell'ultima sessione **dello stesso allenamento e dello stesso atleta**
+
+### Row Level Security
+
+- Ogni utente autenticato **legge** tutte le sessioni (storico condiviso)
+- Ogni utente **scrive** solo le proprie sessioni (`user_id = auth.uid()`)
+- Gli esercizi e gli atleti sono **leggibili e modificabili** da tutti gli utenti autenticati
+
+---
+
+## 🔒 Note sulla sicurezza
+
+La `anon key` di Supabase è pubblica by design — va nel frontend. La sicurezza è garantita dalle **Row Level Security policies** nel DB, non dalla segretezza della chiave. Non committare password personali o service role keys nel repo.
+
+---
+
+## 🛠️ Personalizzazione
+
+Tutto è modificabile direttamente dall'app:
+
+- **Atleti** → Impostazioni → Atleti
+- **Esercizi** → Impostazioni → Esercizi (aggiungi, rimuovi, modifica nome/tempo/range)
+
+Per cambiare i nomi degli allenamenti (A1/A2/A3) o il numero di serie, modifica le costanti in cima allo `<script>` in `index.html`:
 
 ```js
-{ nome: "NOME ESERCIZIO", tempo: "3111", range: "6-10" }
+const ALL_NAMES = ['Allenamento 1','Allenamento 2','Allenamento 3'];
+const SERIE_DEFS = [ ... ];
 ```
-
----
-
-## 🗄️ Schema DB
-
-| Tabella            | Descrizione                              |
-|--------------------|------------------------------------------|
-| `profiles`         | Nome e email di ogni utente              |
-| `workout_sessions` | Una riga per (utente, allenamento, sessione) con tutti i dati kg/rip in JSONB |
-
-Row Level Security: ogni utente **legge** tutti, **scrive** solo i propri dati.
-
----
-
-## 🔒 Sicurezza
-
-- Le credenziali Supabase (`anon key`) sono pubbliche by design — la sicurezza è garantita dalle **Row Level Security policies** nel DB.
-- Non commitare password personali nel repo.
