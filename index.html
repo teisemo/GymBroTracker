@@ -1317,12 +1317,16 @@ async function addExercise(ai){
   const tempo=document.getElementById(`new-ex-tempo-${ai}`).value.trim()||'3111';
   const range=document.getElementById(`new-ex-range-${ai}`).value.trim()||'6-10';
   if(!nome){ nomeEl.focus(); return; }
-  const pos=exercises[ai].length;
+  // Usa un position alto temporaneo per evitare conflitti col vincolo unique,
+  // poi rinumeriamo tutto dopo l'insert
+  const tempPos = 1000 + Date.now() % 10000;
   const {data,error}=await sb.from('exercises')
-    .insert({allenamento_idx:ai,position:pos,nome,tempo,range_rip:range})
+    .insert({allenamento_idx:ai,position:tempPos,nome,tempo,range_rip:range})
     .select().single();
   if(error){ alert('Errore: '+error.message); return; }
   exercises[ai].push(data);
+  // Rinumera tutte le posizioni in sequenza
+  await renumberPositions(ai);
   nomeEl.value='';
   document.getElementById(`new-ex-tempo-${ai}`).value='3111';
   document.getElementById(`new-ex-range-${ai}`).value='6-10';
@@ -1332,16 +1336,25 @@ async function addExercise(ai){
 async function deleteExercise(ai,ei){
   const ex=exercises[ai][ei];
   if(!ex?.id) return;
-  if(!confirm(`Eliminare "${ex.nome}"?
-Attenzione: i dati già salvati nelle sessioni non vengono modificati.`)) return;
+  if(!confirm(`Eliminare "${ex.nome}"?\nAttenzione: i dati già salvati nelle sessioni non vengono modificati.`)) return;
   const {error}=await sb.from('exercises').delete().eq('id',ex.id);
   if(error){ alert('Errore: '+error.message); return; }
   exercises[ai].splice(ei,1);
-  // Aggiorna le posizioni nel DB
+  await renumberPositions(ai);
+  renderExerciseEditor();
+}
+
+// Rinumera le posizioni 0,1,2,... in sequenza per evitare buchi o conflitti
+async function renumberPositions(ai){
+  // Prima porta tutte le posizioni a valori negativi unici (evita conflitti durante il riallineamento)
+  await Promise.all(exercises[ai].map((e,i)=>
+    sb.from('exercises').update({position:-(i+1)}).eq('id',e.id)
+  ));
+  // Poi assegna le posizioni corrette 0,1,2,...
   await Promise.all(exercises[ai].map((e,i)=>
     sb.from('exercises').update({position:i}).eq('id',e.id)
   ));
-  renderExerciseEditor();
+  exercises[ai].forEach((e,i)=>{ e.position=i; });
 }
 </script>
 </body>
