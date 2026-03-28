@@ -554,22 +554,26 @@ async function initHome(){
   try{
     const today=new Date().toISOString().split('T')[0];
 
-    // Controlla se c'è già una sessione oggi (completata)
-    const {data:todayRow}=await sb.from('workout_sessions')
-      .select('*,profiles(display_name)')
-      .eq('user_id',curUser.id).eq('session_date',today)
-      .maybeSingle();
-
-    // Ultima sessione completata (per riepilogo)
+    // Ultima sessione in assoluto (per calcolare la rotazione e il riepilogo)
     const {data:lastRows}=await sb.from('workout_sessions')
       .select('*,profiles(display_name)')
       .eq('user_id',curUser.id)
-      .order('session_date',{ascending:false}).limit(1);
+      .order('session_date',{ascending:false})
+      .order('created_at',{ascending:false})
+      .limit(1);
     const lastRow=lastRows?.[0]||null;
 
-    // Calcola prossimo allenamento
+    // Calcola prossimo allenamento dalla rotazione
     const nextAll = lastRow ? (lastRow.allenamento_idx+1)%3 : 0;
-    curSkip=0; // reset skip
+    curSkip=0;
+
+    // Controlla se esiste già una sessione di oggi per il PROSSIMO allenamento
+    const {data:todayRow}=await sb.from('workout_sessions')
+      .select('*,profiles(display_name)')
+      .eq('user_id',curUser.id)
+      .eq('session_date',today)
+      .eq('allenamento_idx',nextAll)
+      .maybeSingle();
 
     let html='';
 
@@ -687,9 +691,13 @@ async function openTracker(allIdx, editExisting){
   document.getElementById('ex-cont').innerHTML='<div class="spinner-lg"></div>';
 
   try{
-    // Sessione di oggi (se esiste)
+    // Sessione di oggi per QUESTO allenamento specifico (non qualsiasi sessione di oggi)
     const {data:todayRow}=await sb.from('workout_sessions')
-      .select('*').eq('user_id',curUser.id).eq('session_date',today).maybeSingle();
+      .select('*')
+      .eq('user_id',curUser.id)
+      .eq('session_date',today)
+      .eq('allenamento_idx',allIdx)
+      .maybeSingle();
     todaySession=todayRow;
 
     // Ultima sessione dello stesso allenamento (escludi oggi)
