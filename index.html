@@ -1337,10 +1337,19 @@ async function deleteExercise(ai,ei){
   const ex=exercises[ai][ei];
   if(!ex?.id) return;
   if(!confirm(`Eliminare "${ex.nome}"?\nAttenzione: i dati già salvati nelle sessioni non vengono modificati.`)) return;
+
   const {error}=await sb.from('exercises').delete().eq('id',ex.id);
-  if(error){ alert('Errore: '+error.message); return; }
+  if(error){ alert('Errore eliminazione: '+error.message); return; }
+
+  // Verifica che sia stato davvero eliminato dal DB
+  const {data:check}=await sb.from('exercises').select('id').eq('id',ex.id).maybeSingle();
+  if(check){ alert('Errore: il record esiste ancora nel DB. Ricarica la pagina.'); return; }
+
   exercises[ai].splice(ei,1);
   await renumberPositions(ai);
+
+  // Ricarica dal DB per essere sicuri che lo stato locale sia allineato
+  await loadExercises();
   renderExerciseEditor();
 }
 
