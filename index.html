@@ -608,9 +608,10 @@ function showPage(id,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el) el.classList.add('active');
   closeSB();
+  if(id==='home')        { loadWorkouts().then(()=>{ loadAllExercises().then(()=>{ populateFilters(); initHome(); }); }); }
   if(id==='history')     { populateFilters(); loadHistory(); }
   if(id==='stats')       { populateFilters(); loadStats(); }
-  if(id==='exercises')   renderExerciseEditor();
+  if(id==='exercises')   { loadWorkouts().then(()=>loadAllExercises()).then(()=>renderExerciseEditor()); }
   if(id==='athletes')    renderAthletePage();
   if(id==='workouts-mgr') renderWorkoutsMgr();
 }
