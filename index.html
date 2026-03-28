@@ -611,13 +611,17 @@ function showPage(id,el){
   if(id==='home')        { loadWorkouts().then(()=>{ loadAllExercises().then(()=>{ populateFilters(); initHome(); }); }); }
   if(id==='history')     { populateFilters(); loadHistory(); }
   if(id==='stats')       { populateFilters(); loadStats(); }
-  if(id==='exercises')   { loadWorkouts().then(()=>loadAllExercises()).then(()=>renderExerciseEditor()); }
+  if(id==='exercises')   reloadAndRenderExercises();
   if(id==='athletes')    renderAthletePage();
   if(id==='workouts-mgr') renderWorkoutsMgr();
 }
+async function reloadAndRenderExercises(){
+  await loadWorkouts();
+  await loadAllExercises();
+  renderExerciseEditor();
+}
 function goHome(){
   showPage('home', document.querySelector('.nav-item'));
-  initHome();
 }
 function toggleSB(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sb-ov').classList.toggle('show'); }
 function closeSB(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sb-ov').classList.remove('show'); }
