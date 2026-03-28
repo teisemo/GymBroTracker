@@ -221,7 +221,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
 .all-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .all-section-head{display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--bg3);border-bottom:1px solid var(--border)}
 .all-section-title{font-family:var(--fh);font-size:1.2rem;letter-spacing:1px;color:var(--accent)}
-.ex-edit-row{display:grid;grid-template-columns:28px 1fr 80px 80px 36px;align-items:center;gap:0;border-bottom:1px solid var(--border)}
+.ex-edit-row{display:grid;grid-template-columns:28px 1fr 80px 80px 36px 36px;align-items:center;gap:0;border-bottom:1px solid var(--border)}
 .ex-edit-row:last-child{border-bottom:none}
 .ex-pos{font-size:.75rem;color:var(--text3);padding:0 12px;text-align:center}
 .ex-inp{border:none;background:transparent;color:var(--text);font-family:var(--fb);font-size:.88rem;padding:10px 8px;outline:none;width:100%;transition:background .12s}
@@ -247,7 +247,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
   .col-hdrs,.sr{grid-template-columns:1fr 85px 70px 34px}
   .sl{padding:8px 10px;font-size:.75rem}
   .sgrid{grid-template-columns:1fr}
-  .ex-edit-row{grid-template-columns:24px 1fr 60px 60px 34px}
+  .ex-edit-row{grid-template-columns:24px 1fr 60px 60px 32px 32px}
   .home-next{padding:20px}
   .cmp-head,.cmp-row{font-size:.72rem;padding:6px 10px}
 }
@@ -1224,35 +1224,60 @@ async function loadStats(){
 // ── GESTIONE ESERCIZI ─────────────────────────────────────
 function renderExerciseEditor(){
   const el=document.getElementById('ex-editor');
-  if(!exercises[0].length){ el.innerHTML='<div class="empty">Caricamento esercizi...</div>'; return; }
-
+  if(!exercises[0].length && !exercises[1].length && !exercises[2].length){
+    el.innerHTML='<div class="empty">Caricamento esercizi...</div>'; return;
+  }
   let h='';
   [0,1,2].forEach(ai=>{
-    h+=`<div class="all-section">
+    h+=`<div class="all-section" id="ex-section-${ai}">
       <div class="all-section-head">
         <span class="all-section-title">${ALL_SHORT[ai]}</span>
         <span style="font-size:.82rem;color:var(--text2)">${ALL_NAMES[ai]}</span>
+        <span style="font-size:.75rem;color:var(--text3);margin-left:auto">${exercises[ai].length} esercizi</span>
       </div>
-      <div class="col-hdrs" style="grid-template-columns:28px 1fr 80px 80px 36px">
+      <div class="col-hdrs" style="grid-template-columns:28px 1fr 80px 80px 36px 36px">
         <div class="col-h">#</div>
         <div class="col-h" style="text-align:left">Nome esercizio</div>
         <div class="col-h">Tempo</div>
         <div class="col-h">Range</div>
         <div class="col-h"></div>
+        <div class="col-h"></div>
       </div>`;
     exercises[ai].forEach((ex,ei)=>{
-      h+=`<div class="ex-edit-row">
+      h+=`<div class="ex-edit-row" id="exrow_${ai}_${ei}">
         <span class="ex-pos">${ei+1}</span>
         <input class="ex-inp" id="exn_${ai}_${ei}" value="${ex.nome}" onchange="markDirty(${ai},${ei})">
         <input class="ex-inp-sm" id="ext_${ai}_${ei}" value="${ex.tempo}" onchange="markDirty(${ai},${ei})">
         <input class="ex-inp-sm" id="exr_${ai}_${ei}" value="${ex.range_rip}" onchange="markDirty(${ai},${ei})">
         <div class="ex-save-btn">
-          <button class="ex-save-icon" id="exbtn_${ai}_${ei}" onclick="saveExercise(${ai},${ei})" title="Salva">
-            💾
+          <button class="ex-save-icon" id="exbtn_${ai}_${ei}" onclick="saveExercise(${ai},${ei})" title="Salva">💾</button>
+        </div>
+        <div class="ex-save-btn" style="border-left:1px solid var(--border)">
+          <button class="ex-save-icon" onclick="deleteExercise(${ai},${ei})" title="Elimina"
+            style="color:var(--text3)" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+              <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
           </button>
         </div>
       </div>`;
     });
+    // Add exercise row at bottom of each section
+    h+=`<div style="padding:10px 14px;border-top:1px solid var(--border);background:var(--bg3);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="new-ex-nome-${ai}" class="ex-inp" style="flex:1;min-width:140px;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:.85rem"
+        placeholder="Nuovo esercizio..." maxlength="60">
+      <input id="new-ex-tempo-${ai}" class="ex-inp-sm" style="width:70px;border:1px solid var(--border);border-radius:6px;padding:7px 8px;text-align:center"
+        placeholder="Tempo" value="3111" maxlength="8">
+      <input id="new-ex-range-${ai}" class="ex-inp-sm" style="width:70px;border:1px solid var(--border);border-radius:6px;padding:7px 8px;text-align:center"
+        placeholder="Range" value="6-10" maxlength="10">
+      <button class="btn btn-accent btn-sm" onclick="addExercise(${ai})">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Aggiungi
+      </button>
+    </div>`;
     h+=`</div>`;
   });
   el.innerHTML=h;
@@ -1265,7 +1290,7 @@ function markDirty(ai,ei){
 
 async function saveExercise(ai,ei){
   const ex=exercises[ai][ei];
-  if(!ex?.id){ console.warn('No DB id for exercise',ai,ei); return; }
+  if(!ex?.id){ console.warn('No DB id',ai,ei); return; }
   const nome =document.getElementById(`exn_${ai}_${ei}`).value.trim().toUpperCase();
   const tempo=document.getElementById(`ext_${ai}_${ei}`).value.trim();
   const range=document.getElementById(`exr_${ai}_${ei}`).value.trim();
@@ -1277,15 +1302,46 @@ async function saveExercise(ai,ei){
       .update({nome,tempo,range_rip:range,updated_at:new Date().toISOString()})
       .eq('id',ex.id);
     if(error) throw error;
-    exercises[ai][ei].nome=nome;
-    exercises[ai][ei].tempo=tempo;
-    exercises[ai][ei].range_rip=range;
+    exercises[ai][ei]={...exercises[ai][ei],nome,tempo,range_rip:range};
     btn.textContent='✓'; btn.classList.add('saved'); btn.style.opacity='1';
     setTimeout(()=>{ btn.textContent='💾'; btn.classList.remove('saved'); },2000);
   } catch(e){
     btn.textContent='⚠'; btn.style.opacity='1';
-    alert('Errore salvataggio: '+e.message);
+    alert('Errore: '+e.message);
   }
+}
+
+async function addExercise(ai){
+  const nomeEl=document.getElementById(`new-ex-nome-${ai}`);
+  const nome=nomeEl.value.trim().toUpperCase();
+  const tempo=document.getElementById(`new-ex-tempo-${ai}`).value.trim()||'3111';
+  const range=document.getElementById(`new-ex-range-${ai}`).value.trim()||'6-10';
+  if(!nome){ nomeEl.focus(); return; }
+  const pos=exercises[ai].length;
+  const {data,error}=await sb.from('exercises')
+    .insert({allenamento_idx:ai,position:pos,nome,tempo,range_rip:range})
+    .select().single();
+  if(error){ alert('Errore: '+error.message); return; }
+  exercises[ai].push(data);
+  nomeEl.value='';
+  document.getElementById(`new-ex-tempo-${ai}`).value='3111';
+  document.getElementById(`new-ex-range-${ai}`).value='6-10';
+  renderExerciseEditor();
+}
+
+async function deleteExercise(ai,ei){
+  const ex=exercises[ai][ei];
+  if(!ex?.id) return;
+  if(!confirm(`Eliminare "${ex.nome}"?
+Attenzione: i dati già salvati nelle sessioni non vengono modificati.`)) return;
+  const {error}=await sb.from('exercises').delete().eq('id',ex.id);
+  if(error){ alert('Errore: '+error.message); return; }
+  exercises[ai].splice(ei,1);
+  // Aggiorna le posizioni nel DB
+  await Promise.all(exercises[ai].map((e,i)=>
+    sb.from('exercises').update({position:i}).eq('id',e.id)
+  ));
+  renderExerciseEditor();
 }
 </script>
 </body>
