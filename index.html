@@ -196,6 +196,26 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
 .shrow{display:flex;justify-content:space-between;font-size:.75rem;color:var(--text3);border-top:1px solid var(--border);padding:4px 0}
 .shval{font-family:var(--fm);color:var(--text2)}
 
+/* ── ATLETI SELECTOR ── */
+.ath-selector{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;margin-bottom:20px;flex-wrap:wrap}
+.ath-selector-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);flex-shrink:0}
+.ath-btns{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.ath-btn{padding:6px 16px;border-radius:99px;border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-family:var(--fb);font-size:.85rem;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.ath-btn:hover{border-color:var(--accent);color:var(--accent)}
+.ath-btn.active{background:var(--accent);border-color:var(--accent);color:#0a0a0b;font-weight:600}
+.ath-mgr{display:flex;flex-direction:column;gap:10px}
+.ath-row{display:grid;grid-template-columns:28px 1fr 1fr 36px;align-items:center;gap:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .15s}
+.ath-row:hover{border-color:var(--border2)}
+.ath-drag{display:flex;align-items:center;justify-content:center;padding:10px 6px;color:var(--text3);font-size:.85rem}
+.ath-inp{border:none;border-left:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--fb);font-size:.88rem;padding:10px 12px;outline:none;width:100%}
+.ath-inp:focus{background:rgba(212,244,66,.05)}
+.ath-del{border:none;border-left:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 10px;transition:all .15s;height:100%}
+.ath-del:hover{background:var(--red-dim);color:var(--red)}
+.ath-add-row{display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap}
+.ath-add-row input{flex:1;min-width:120px;padding:9px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--fb);font-size:.88rem;outline:none}
+.ath-add-row input:focus{border-color:var(--accent)}
+.ath-inactive{opacity:.45}
+
 /* ── GESTIONE ESERCIZI ── */
 .ex-editor{display:flex;flex-direction:column;gap:20px}
 .all-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
@@ -287,6 +307,9 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Progressi
     </a>
     <div class="nsl" style="margin-top:auto">Impostazioni</div>
+    <a href="#" class="nav-item" onclick="showPage('athletes',this)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Atleti
+    </a>
     <a href="#" class="nav-item" onclick="showPage('exercises',this)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Esercizi
     </a>
@@ -326,6 +349,13 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
         <span class="trk-date" id="trk-date">—</span>
         <div class="autosave-dot" id="autosave-dot"></div>
       </div>
+      <!-- Selettore atleta -->
+      <div class="ath-selector" id="ath-selector">
+        <span class="ath-selector-label">Per:</span>
+        <div class="ath-btns" id="ath-btns">
+          <div class="spinner-sm"></div>
+        </div>
+      </div>
       <div id="ex-cont"><div class="spinner-lg"></div></div>
       <div class="trk-foot">
         <div class="cbar-wrap">
@@ -344,7 +374,9 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
       <div class="page-hdr">
         <div><h1 class="page-title">Storico</h1><p class="page-sub">Sessioni del gruppo</p></div>
         <div class="frow">
-          <select class="selx" id="hf-user" onchange="loadHistory()"><option value="">Tutti gli atleti</option></select>
+          <select class="selx" id="hf-user" onchange="loadHistory()">
+          <option value="">Tutti gli atleti</option>
+        </select>
           <select class="selx" id="hf-all" onchange="loadHistory()">
             <option value="">Tutti gli allenamenti</option>
             <option value="0">Allenamento 1</option>
@@ -364,7 +396,9 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
     <div id="page-stats" class="page">
       <div class="page-hdr"><div><h1 class="page-title">Progressi</h1><p class="page-sub">Evoluzione dei carichi</p></div></div>
       <div class="sf-row">
-        <select class="selx" id="sf-user" onchange="loadStats()"><option value="">Tutti gli atleti</option></select>
+        <select class="selx" id="sf-user" onchange="loadStats()">
+        <option value="">Tutti gli atleti</option>
+      </select>
         <select class="selx" id="sf-all" onchange="loadStats()">
           <option value="">Tutti gli esercizi</option>
           <option value="0">Allenamento 1</option>
@@ -373,6 +407,22 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
         </select>
       </div>
       <div class="sgrid" id="sgrid"><div class="empty">Caricamento...</div></div>
+    </div>
+
+    <!-- ── GESTIONE ATLETI ── -->
+    <div id="page-athletes" class="page">
+      <div class="page-hdr">
+        <div><h1 class="page-title">Atleti</h1><p class="page-sub">Gestisci i nomi degli atleti del gruppo</p></div>
+      </div>
+      <div class="ath-mgr" id="ath-mgr"><div class="spinner-lg"></div></div>
+      <div class="ath-add-row" style="margin-top:16px">
+        <input type="text" id="new-ath-nome" placeholder="Nome" maxlength="30">
+        <input type="text" id="new-ath-cog" placeholder="Cognome" maxlength="30">
+        <button class="btn btn-accent btn-sm" onclick="addAthlete()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Aggiungi atleta
+        </button>
+      </div>
     </div>
 
     <!-- ── GESTIONE ESERCIZI ── -->
@@ -404,14 +454,16 @@ const SERIE_DEFS = [
 
 // ── STATE ─────────────────────────────────────────────────
 let sb, curUser=null, profiles=[];
-let exercises=[[],[],[]];   // exercises[allIdx] = [{id,nome,tempo,range_rip,position}]
-let curAll=0;               // allenamento corrente nel tracker
-let curSkip=0;              // quanti skip applicati (per override rotazione)
-let todaySession=null;      // riga workout_sessions di oggi (se esiste)
-let prevSession=null;       // ultima sessione stesso allenamento (per suggerimenti)
+let exercises=[[],[],[]];
+let athletes=[];            // [{id,nome,cognome,position,active}] sorted by position
+let curAll=0;
+let curSkip=0;
+let curAthlete=null;        // atleta selezionato nel tracker
+let todaySession=null;
+let prevSession=null;
 let autoTimer=null;
 let authMode='login';
-let cmpSessions=[];         // max 2 per confronto storico
+let cmpSessions=[];
 
 // ── BOOT ──────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async ()=>{
@@ -486,19 +538,21 @@ async function boot(user){
   try{
     const {data}=await sb.from('profiles').select('id,display_name,email').order('display_name');
     profiles=data||[];
+    // Populate athlete filters in history and stats
     ['hf-user','sf-user'].forEach(sid=>{
       const sel=document.getElementById(sid);
       [...sel.options].forEach(o=>{ if(o.value) sel.remove(o.index); });
-      profiles.forEach(p=>{
+      athletes.forEach(a=>{
         const o=document.createElement('option');
-        o.value=p.id; o.textContent=p.display_name||p.email;
+        o.value=a.id;
+        o.textContent=(a.nome+(a.cognome?' '+a.cognome:'')).trim();
         sel.appendChild(o);
       });
     });
   } catch(e){ console.warn('profiles',e); }
 
-  // Carica esercizi dal DB
-  await loadExercises();
+  // Carica esercizi e atleti dal DB
+  await Promise.all([loadExercises(), loadAthletes()]);
 
   showScreen('app-screen');
   await initHome();
@@ -523,6 +577,118 @@ async function loadExercises(){
   }
 }
 
+// ── ATHLETES ─────────────────────────────────────────────
+async function loadAthletes(){
+  try{
+    const {data,error}=await sb.from('athletes')
+      .select('*').eq('active',true).order('position').order('id');
+    if(error) throw error;
+    athletes=data||[];
+  } catch(e){ console.error('loadAthletes',e); athletes=[]; }
+}
+
+function athleteFullName(a){ return a ? (a.nome+(a.cognome?' '+a.cognome:'')).trim() : '—'; }
+
+function renderAthleteSelector(){
+  const btns=document.getElementById('ath-btns');
+  if(!btns) return;
+  if(!athletes.length){
+    btns.innerHTML='<span style="font-size:.8rem;color:var(--text3)">Nessun atleta — aggiungili in Impostazioni → Atleti</span>';
+    curAthlete=null;
+    return;
+  }
+  // Se curAthlete non è nella lista (es. rimosso), seleziona il primo
+  if(!curAthlete || !athletes.find(a=>a.id===curAthlete.id)){
+    curAthlete=athletes[0];
+  }
+  btns.innerHTML=athletes.map(a=>`
+    <button class="ath-btn${curAthlete&&curAthlete.id===a.id?' active':''}"
+      onclick="selectAthlete(${a.id})">${athleteFullName(a)}</button>
+  `).join('');
+}
+
+function selectAthlete(id){
+  curAthlete=athletes.find(a=>a.id===id)||null;
+  renderAthleteSelector();
+  // Ricarica sessione per questo atleta
+  if(curAthlete) loadTrackerForAthlete();
+}
+
+async function loadTrackerForAthlete(){
+  const today=new Date().toISOString().split('T')[0];
+  // Sessione di oggi per questo atleta+allenamento
+  const {data:todayRow}=await sb.from('workout_sessions')
+    .select('*')
+    .eq('user_id',curUser.id)
+    .eq('session_date',today)
+    .eq('allenamento_idx',curAll)
+    .eq('athlete_id',curAthlete.id)
+    .maybeSingle();
+  todaySession=todayRow;
+
+  // Ultima sessione stesso allenamento+atleta
+  const {data:prevRows}=await sb.from('workout_sessions')
+    .select('*').eq('user_id',curUser.id).eq('allenamento_idx',curAll)
+    .eq('athlete_id',curAthlete.id).neq('session_date',today)
+    .order('session_date',{ascending:false}).limit(1);
+  prevSession=prevRows?.[0]||null;
+
+  renderEx(todaySession?.series_data||{});
+  updateCbar();
+}
+
+// Gestione atleti (pagina)
+async function renderAthletePage(){
+  const el=document.getElementById('ath-mgr');
+  await loadAthletes();
+  if(!athletes.length){
+    el.innerHTML='<div class="empty">Nessun atleta ancora — aggiungine uno sotto</div>';
+    return;
+  }
+  el.innerHTML=athletes.map((a,i)=>`
+    <div class="ath-row${a.active?'':' ath-inactive'}" id="ath-row-${a.id}">
+      <div class="ath-drag">${i+1}</div>
+      <input class="ath-inp" id="ath-nome-${a.id}" value="${a.nome}" placeholder="Nome"
+        onchange="saveAthlete(${a.id})">
+      <input class="ath-inp" id="ath-cog-${a.id}" value="${a.cognome||''}" placeholder="Cognome"
+        onchange="saveAthlete(${a.id})">
+      <button class="ath-del" onclick="deleteAthlete(${a.id})" title="Rimuovi">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+async function saveAthlete(id){
+  const nome=document.getElementById(`ath-nome-${id}`)?.value.trim();
+  const cog =document.getElementById(`ath-cog-${id}`)?.value.trim()||''
+  if(!nome) return;
+  await sb.from('athletes').update({nome,cognome:cog}).eq('id',id);
+  await loadAthletes();
+}
+
+async function deleteAthlete(id){
+  if(!confirm('Rimuovere questo atleta? Le sessioni registrate rimarranno nello storico.')) return;
+  await sb.from('athletes').delete().eq('id',id);
+  await loadAthletes();
+  renderAthletePage();
+  renderAthleteSelector();
+}
+
+async function addAthlete(){
+  const nome=document.getElementById('new-ath-nome').value.trim();
+  const cog =document.getElementById('new-ath-cog').value.trim()||''
+  if(!nome){ document.getElementById('new-ath-nome').focus(); return; }
+  const pos=athletes.length;
+  const {error}=await sb.from('athletes').insert({nome,cognome:cog,position:pos,active:true});
+  if(error){ alert('Errore: '+error.message); return; }
+  document.getElementById('new-ath-nome').value='';
+  document.getElementById('new-ath-cog').value='';
+  await loadAthletes();
+  renderAthletePage();
+  renderAthleteSelector();
+}
+
 // ── UI HELPERS ────────────────────────────────────────────
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -537,6 +703,7 @@ function showPage(id,el){
   if(id==='history')   loadHistory();
   if(id==='stats')     loadStats();
   if(id==='exercises') renderExerciseEditor();
+  if(id==='athletes')  renderAthletePage();
 }
 function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-ov').classList.toggle('show')}
 function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-ov').classList.remove('show')}
@@ -556,7 +723,7 @@ async function initHome(){
 
     // Ultima sessione in assoluto (per calcolare la rotazione e il riepilogo)
     const {data:lastRows}=await sb.from('workout_sessions')
-      .select('*,profiles(display_name)')
+      .select('*,athletes(nome,cognome)')
       .eq('user_id',curUser.id)
       .order('session_date',{ascending:false})
       .order('created_at',{ascending:false})
@@ -569,7 +736,7 @@ async function initHome(){
 
     // Controlla se esiste già una sessione di oggi per il PROSSIMO allenamento
     const {data:todayRow}=await sb.from('workout_sessions')
-      .select('*,profiles(display_name)')
+      .select('*,athletes(nome,cognome)')
       .eq('user_id',curUser.id)
       .eq('session_date',today)
       .eq('allenamento_idx',nextAll)
@@ -611,7 +778,8 @@ async function initHome(){
 
     // Riepilogo ultima sessione
     if(lastRow){
-      const pn=lastRow.profiles?.display_name||'Tu';
+      const lastAth=lastRow.athlete_id?athletes.find(a=>a.id===lastRow.athlete_id):null;
+      const pn=lastAth?athleteFullName(lastAth):'—';
       const dt=lastRow.session_date
         ?new Date(lastRow.session_date+'T12:00:00').toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})
         :'—';
@@ -691,24 +859,15 @@ async function openTracker(allIdx, editExisting){
   document.getElementById('ex-cont').innerHTML='<div class="spinner-lg"></div>';
 
   try{
-    // Sessione di oggi per QUESTO allenamento specifico (non qualsiasi sessione di oggi)
-    const {data:todayRow}=await sb.from('workout_sessions')
-      .select('*')
-      .eq('user_id',curUser.id)
-      .eq('session_date',today)
-      .eq('allenamento_idx',allIdx)
-      .maybeSingle();
-    todaySession=todayRow;
+    // Render selettore atleti (sceglie automaticamente il primo / l'ultimo usato)
+    renderAthleteSelector();
 
-    // Ultima sessione dello stesso allenamento (escludi oggi)
-    const {data:prevRows}=await sb.from('workout_sessions')
-      .select('*').eq('user_id',curUser.id).eq('allenamento_idx',allIdx)
-      .neq('session_date',today)
-      .order('session_date',{ascending:false}).limit(1);
-    prevSession=prevRows?.[0]||null;
-
-    renderEx(todaySession?.series_data||{});
-    updateCbar();
+    // Carica sessione per l'atleta selezionato
+    if(curAthlete){
+      await loadTrackerForAthlete();
+    } else {
+      document.getElementById('ex-cont').innerHTML='<div class="empty">Aggiungi almeno un atleta in Impostazioni → Atleti</div>';
+    }
   } catch(e){
     document.getElementById('ex-cont').innerHTML=`<div class="empty">Errore: ${e.message}</div>`;
   }
@@ -826,6 +985,7 @@ async function autoSave(){
 
 async function saveSessionDB(seriesData){
   const today=new Date().toISOString().split('T')[0];
+  const athleteId=curAthlete?.id||null;
   if(todaySession?.id){
     const {error}=await sb.from('workout_sessions')
       .update({series_data:seriesData,updated_at:new Date().toISOString()})
@@ -834,6 +994,7 @@ async function saveSessionDB(seriesData){
   } else {
     const {data,error}=await sb.from('workout_sessions')
       .insert({user_id:curUser.id,allenamento_idx:curAll,session_date:today,
+               athlete_id:athleteId,
                series_data:seriesData,created_at:new Date().toISOString(),
                updated_at:new Date().toISOString()})
       .select().single();
@@ -866,16 +1027,17 @@ async function loadHistory(){
 
   try{
     let q=sb.from('workout_sessions')
-      .select('*,profiles(display_name,email)')
+      .select('*,athletes(nome,cognome)')
       .order('session_date',{ascending:false}).limit(200);
-    if(uf) q=q.eq('user_id',uf);
+    if(uf) q=q.eq('athlete_id',parseInt(uf));
     if(af!=='') q=q.eq('allenamento_idx',parseInt(af));
     const {data,error}=await q;
     if(error) throw error;
     if(!data?.length){ el.innerHTML='<div class="empty">Nessuna sessione trovata</div>'; return; }
 
     el.innerHTML=data.map((s,idx)=>{
-      const pn=s.profiles?.display_name||s.profiles?.email||'—';
+      const ath=s.athletes;
+      const pn=ath?(ath.nome+(ath.cognome?' '+ath.cognome:'')).trim():'—';
       const an=ALL_SHORT[s.allenamento_idx]||`A${s.allenamento_idx+1}`;
       const dt=s.session_date
         ?new Date(s.session_date+'T12:00:00').toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short',year:'numeric'})
@@ -967,9 +1129,9 @@ async function loadStats(){
   el.innerHTML='<div class="empty">Caricamento...</div>';
   try{
     let q=sb.from('workout_sessions')
-      .select('user_id,allenamento_idx,session_date,series_data,profiles(display_name)')
+      .select('athlete_id,allenamento_idx,session_date,series_data,athletes(nome,cognome)')
       .order('session_date',{ascending:true});
-    if(uid) q=q.eq('user_id',uid);
+    if(uid) q=q.eq('athlete_id',parseInt(uid));
     if(aidx!=='') q=q.eq('allenamento_idx',parseInt(aidx));
     const {data,error}=await q;
     if(error) throw error;
@@ -980,7 +1142,7 @@ async function loadStats(){
       const allEx=exercises[sess.allenamento_idx]||[];
       const sd=sess.series_data||{};
       const dt=sess.session_date||'';
-      const uname=sess.profiles?.display_name||'?';
+      const ath2=sess.athletes; const uname=ath2?(ath2.nome+(ath2.cognome?' '+ath2.cognome:'')).trim():'?';
       allEx.forEach((ex,ei)=>{
         const s2=(sd[ei]||{})[2]||{};
         if(!s2.kg) return;
