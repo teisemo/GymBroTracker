@@ -369,13 +369,23 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('today').textContent =
     new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
-  sb.auth.onAuthStateChange(async (ev, session) => {
-    if (session) { curUser = session.user; await onLogin(session.user); }
-    else         { curUser = null; showScreen('auth-screen'); }
-  });
-
+  // Controlla sessione esistente al caricamento
   const {data} = await sb.auth.getSession();
-  if (!data.session) showScreen('auth-screen');
+  if (data.session) {
+    curUser = data.session.user;
+    await onLogin(data.session.user);
+  } else {
+    showScreen('auth-screen');
+  }
+
+  // Listener per cambi successivi (logout, token refresh)
+  sb.auth.onAuthStateChange(async (ev, session) => {
+    if (ev === 'SIGNED_OUT') {
+      curUser = null;
+      showScreen('auth-screen');
+    }
+    // SIGNED_IN gestito direttamente in handleAuth per evitare race condition
+  });
 });
 
 // ── UI HELPERS ────────────────────────────────────────────
@@ -418,20 +428,25 @@ async function handleAuth(e){
   btxt.classList.add('hidden');
   try {
     if(authMode==='login'){
-      const {error}=await sb.auth.signInWithPassword({email,password:pwd});
+      const {data,error}=await sb.auth.signInWithPassword({email,password:pwd});
       if(error) throw error;
+      curUser=data.user;
+      await onLogin(data.user);
     } else {
       const {data,error}=await sb.auth.signUp({email,password:pwd,options:{data:{display_name:name}}});
       if(error) throw error;
-      if(data.user) await upsertProfile(data.user.id,email,name);
+      if(!data.user) throw new Error('Controlla la tua email per confermare la registrazione.');
+      await upsertProfile(data.user.id,email,name);
+      curUser=data.user;
+      await onLogin(data.user);
     }
   } catch(err){
     errEl.textContent=xlErr(err.message);
     errEl.classList.remove('hidden');
-  } finally {
     spin.classList.add('hidden');
     btxt.classList.remove('hidden');
   }
+  // se login OK la schermata cambia, lo spinner scompare da solo
 }
 function xlErr(m){
   if(m.includes('Invalid login')) return 'Email o password non corretti.';
