@@ -885,6 +885,13 @@ function renderAthleteSelector(){
 }
 
 async function selectAthlete(id){
+  // Salva immediatamente i dati dell'atleta corrente prima di switchare
+  // (annulla il timer pendente per evitare che scatti dopo il cambio)
+  if(autoTimer){
+    clearTimeout(autoTimer);
+    autoTimer=null;
+    await autoSave();
+  }
   curAthlete=athletes.find(a=>a.id===id)||null;
   renderAthleteSelector();
   if(curAthlete) await loadTrackerForAthlete();
