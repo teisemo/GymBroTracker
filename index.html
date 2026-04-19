@@ -505,6 +505,18 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
   </main>
 
   <!-- FLOATING TIMER (visible only in tracker) -->
+  <!-- CHART MODAL -->
+  <div class="chart-overlay hidden" id="chart-overlay" onclick="closeChart(event)">
+    <div class="chart-modal" id="chart-modal">
+      <button class="chart-close" onclick="closeChart()">✕</button>
+      <div class="chart-modal-title" id="chart-title">—</div>
+      <div class="chart-modal-sub" id="chart-sub">—</div>
+      <div class="chart-wrap">
+        <svg class="chart-svg" id="chart-svg" viewBox="0 0 640 260" width="640" height="260"></svg>
+      </div>
+    </div>
+  </div>
+
   <div class="timer-fab hidden" id="timer-fab" onclick="timerFabClick(event)">
     <div class="timer-time" id="timer-display">2:00</div>
     <div class="timer-label" id="timer-label">RIPOSO</div>
