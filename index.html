@@ -239,6 +239,18 @@ body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100
 .spark{display:flex;align-items:flex-end;gap:3px;height:36px;margin-top:10px}
 .sbar{flex:1;background:var(--accent-dim);border-radius:2px;min-height:3px}
 .sbar.lat{background:var(--accent)}.sbar.amb{background:var(--amber)}
+.scard{cursor:pointer;transition:border-color .15s}.scard:hover{border-color:var(--border2)}
+
+/* Chart modal */
+.chart-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.chart-overlay.hidden{display:none}
+.chart-modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:680px;padding:24px;position:relative}
+.chart-modal-title{font-family:var(--fh);font-size:1.6rem;letter-spacing:1px;color:var(--text);margin-bottom:4px}
+.chart-modal-sub{font-size:.78rem;color:var(--text3);margin-bottom:20px}
+.chart-close{position:absolute;top:16px;right:16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);width:32px;height:32px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.chart-close:hover{background:var(--surface);color:var(--text)}
+.chart-wrap{width:100%;overflow-x:auto}
+.chart-svg{display:block}
 .shist{margin-top:8px}
 .shrow{display:flex;justify-content:space-between;font-size:.75rem;color:var(--text3);border-top:1px solid var(--border);padding:4px 0}
 .shval{font-family:var(--fm);color:var(--text2)}
@@ -1164,6 +1176,7 @@ async function loadStats(){
     if(error) throw error;
     if(!data?.length){ el.innerHTML='<div class="empty">Nessun dato ancora.</div>'; return; }
 
+    window._statsData={};  // store for chart access
     const exData={};
     data.forEach(sess=>{
       const exList=getWorkoutExercises(sess.workout_id);
@@ -1179,6 +1192,7 @@ async function loadStats(){
         const key=`${ex.nome}||${uname}`;
         if(!exData[key]) exData[key]=[];
         exData[key].push({date:dt,kg,rip,user:uname,exnome:ex.nome});
+        window._statsData[key]=exData[key];
       });
     });
 
@@ -1202,7 +1216,8 @@ async function loadStats(){
       }).join('');
       const dh=delta!==null?`<div class="scard-d${delta<0?' neg':''}">${delta>=0?'+':''}${delta.toFixed(1)}kg vs prec.</div>`:`<div class="scard-d" style="color:var(--text3)">Prima registrazione</div>`;
       const upgBadge=lat.rip>=10?`<span style="font-size:.68rem;color:var(--amber);background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);padding:1px 6px;border-radius:4px">↑ aumenta</span>`:'';
-      return `<div class="scard">
+      const safeKey=encodeURIComponent(key);
+      return `<div class="scard" onclick="openChart('${safeKey}')">
         <div class="scard-name">${lat.exnome}${upgBadge}</div>
         <div style="font-size:.72rem;color:var(--text3);margin-bottom:4px">${lat.user}</div>
         <div class="scard-val">${lat.kg}<span class="scard-unit">kg</span></div>
@@ -1409,7 +1424,127 @@ async function renumberPositions(wid){
   list.forEach((e,i)=>{ e.position=i; });
 }
 
-// ── FLOATING TIMER ───────────────────────────────────────
+// ── CHART ─────────────────────────────────────────────────
+function openChart(safeKey){
+  const key=decodeURIComponent(safeKey);
+  const entries=window._statsData?.[key];
+  if(!entries||entries.length<2){
+    alert('Servono almeno 2 sessioni per visualizzare il grafico.');
+    return;
+  }
+  const exnome=entries[0].exnome;
+  const user=entries[0].user;
+  document.getElementById('chart-title').textContent=exnome;
+  document.getElementById('chart-sub').textContent=`${user} — ${entries.length} sessioni`;
+  drawChart(entries);
+  document.getElementById('chart-overlay').classList.remove('hidden');
+}
+
+function closeChart(e){
+  if(e&&e.target!==document.getElementById('chart-overlay')&&!e.target.classList.contains('chart-close')) return;
+  document.getElementById('chart-overlay').classList.add('hidden');
+}
+
+function drawChart(entries){
+  const svg=document.getElementById('chart-svg');
+  const W=640, H=260, padL=52, padR=20, padT=20, padB=48;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+
+  const kgs=entries.map(e=>e.kg);
+  const minKg=Math.min(...kgs);
+  const maxKg=Math.max(...kgs);
+  const kgRange=maxKg-minKg||1;
+
+  // Detect dark mode
+  const dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const col={
+    grid:   dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.07)',
+    axis:   dark?'#55556a':'#aaa',
+    line:   '#d4f442',
+    dot:    '#d4f442',
+    dotHov: '#fff',
+    area:   'rgba(212,244,66,.08)',
+    label:  dark?'#9090a0':'#666',
+    amber:  '#f59e0b',
+    bg:     dark?'#111114':'#fff',
+  };
+
+  // Y axis nice ticks
+  function niceTicks(min,max,n=5){
+    const step=Math.ceil((max-min)/n/5)*5||1;
+    const start=Math.floor(min/step)*step;
+    const ticks=[];
+    for(let t=start;t<=max+step;t+=step) ticks.push(t);
+    return ticks;
+  }
+  const yTicks=niceTicks(minKg,maxKg);
+  const yMin=yTicks[0], yMax=yTicks[yTicks.length-1];
+  const yRange=yMax-yMin||1;
+
+  function xPos(i){ return padL+i/(entries.length-1||1)*plotW; }
+  function yPos(kg){ return padT+plotH-(kg-yMin)/yRange*plotH; }
+
+  let out='';
+
+  // Area fill
+  const pts=entries.map((e,i)=>`${xPos(i).toFixed(1)},${yPos(e.kg).toFixed(1)}`).join(' ');
+  const firstX=xPos(0).toFixed(1), lastX=xPos(entries.length-1).toFixed(1);
+  const baseY=(padT+plotH).toFixed(1);
+  out+=`<polygon points="${firstX},${baseY} ${pts} ${lastX},${baseY}" fill="${col.area}"/>`;
+
+  // Y grid lines + labels
+  yTicks.forEach(t=>{
+    const y=yPos(t).toFixed(1);
+    out+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="${col.grid}" stroke-width="1"/>`;
+    out+=`<text x="${(padL-6).toFixed(0)}" y="${y}" text-anchor="end" dominant-baseline="central" font-size="11" fill="${col.label}" font-family="DM Mono,monospace">${t}</text>`;
+  });
+
+  // X axis labels (max 8, evenly spaced)
+  const step=Math.ceil(entries.length/8);
+  entries.forEach((e,i)=>{
+    if(i%step!==0&&i!==entries.length-1) return;
+    const x=xPos(i).toFixed(1);
+    const label=e.date.slice(5); // MM-DD
+    out+=`<text x="${x}" y="${(padT+plotH+14).toFixed(0)}" text-anchor="middle" font-size="10" fill="${col.label}" font-family="DM Mono,monospace">${label}</text>`;
+  });
+
+  // Axes
+  out+=`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+plotH}" stroke="${col.axis}" stroke-width="1"/>`;
+  out+=`<line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" stroke="${col.axis}" stroke-width="1"/>`;
+
+  // Line
+  const linePts=entries.map((e,i)=>`${xPos(i).toFixed(1)},${yPos(e.kg).toFixed(1)}`).join(' ');
+  out+=`<polyline points="${linePts}" fill="none" stroke="${col.line}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+  // Dots + tooltips
+  entries.forEach((e,i)=>{
+    const x=xPos(i).toFixed(1), y=yPos(e.kg).toFixed(1);
+    const isUpgrade=e.rip>=10;
+    const dotColor=isUpgrade?col.amber:col.dot;
+    const r=entries.length>20?3:4;
+    out+=`<g class="chart-dot">
+      <circle cx="${x}" cy="${y}" r="${r+3}" fill="transparent"/>
+      <circle cx="${x}" cy="${y}" r="${r}" fill="${dotColor}" stroke="${col.bg}" stroke-width="1.5"/>
+      <title>${e.date}: ${e.kg}kg × ${e.rip}r${isUpgrade?' ↑':''}</title>
+    </g>`;
+  });
+
+  // Legend
+  out+=`<circle cx="${padL+8}" cy="${H-10}" r="4" fill="${col.line}"/>`;
+  out+=`<text x="${padL+16}" y="${H-10}" dominant-baseline="central" font-size="10" fill="${col.label}" font-family="DM Sans,sans-serif">Carico (kg) — 3ª serie allenante</text>`;
+  out+=`<circle cx="${padL+260}" cy="${H-10}" r="4" fill="${col.amber}"/>`;
+  out+=`<text x="${padL+268}" y="${H-10}" dominant-baseline="central" font-size="10" fill="${col.label}" font-family="DM Sans,sans-serif">↑ ≥10 rip (aumenta peso)</text>`;
+
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.setAttribute('width',W);
+  svg.setAttribute('height',H);
+  svg.innerHTML=out;
+}
+
+// Close chart on Escape
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.getElementById('chart-overlay')?.classList.add('hidden'); });
+
+// ── FLOATING TIMER ─────────────────────────────────────────────────────────
 let timerDuration=90, timerRemaining=90, timerInterval=null;
 let timerRunning=false, timerRinging=false;
 let timerPanelOpen=false;
